@@ -1,28 +1,31 @@
-import { getRepository } from 'typeorm';
-import { User, UserRole } from '../models/User';
+import { AppDataSource } from './database';
+import { User, UserRole } from '../models/user.model';
+import { hash } from 'bcrypt';
 
 export const initializeAdmin = async () => {
-  const userRepository = getRepository(User);
+  const userRepository = AppDataSource.getRepository(User);
 
   try {
-    // Check if admin user exists
+    // Check if admin user already exists
     const adminExists = await userRepository.findOne({
       where: { username: 'admin' }
     });
 
     if (!adminExists) {
       // Create admin user
-      const admin = new User();
-      admin.username = 'admin';
-      admin.password = 'admin123';
-      admin.fullName = 'System Administrator';
-      admin.role = UserRole.ADMIN;
-      admin.isActive = true;
+      const hashedPassword = await hash('admin123', 10);
+      const adminUser = userRepository.create({
+        username: 'admin',
+        password: hashedPassword,
+        email: 'admin@myautoerp.com',
+        role: UserRole.ADMIN,
+        isActive: true
+      });
 
-      await userRepository.save(admin);
+      await userRepository.save(adminUser);
       console.log('Admin user created successfully');
     }
   } catch (error) {
-    console.error('Error creating admin user:', error);
+    console.error('Error initializing admin user:', error);
   }
 };
