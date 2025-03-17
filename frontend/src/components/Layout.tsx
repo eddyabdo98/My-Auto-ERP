@@ -1,177 +1,141 @@
-import React, { useState } from 'react';
-import { styled } from '@mui/material/styles';
+import { useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Drawer,
   AppBar,
-  Toolbar,
-  List,
-  Typography,
-  Divider,
+  Box,
+  CssBaseline,
+  Drawer,
   IconButton,
+  List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemButton,
-  Avatar,
-  Menu,
-  MenuItem,
+  Toolbar,
+  Typography,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard,
-  People,
-  Inventory2,
-  ShoppingCart,
-  PointOfSale,
-  AttachMoney,
-  Receipt,
-  Business,
-  AccountCircle,
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
-  open?: boolean;
-}>(({ theme, open }) => ({
-  flexGrow: 1,
-  padding: theme.spacing(3),
-  transition: theme.transitions.create('margin', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  marginLeft: `-${drawerWidth}px`,
-  ...(open && {
-    transition: theme.transitions.create('margin', {
-      easing: theme.transitions.easing.easeOut,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-    marginLeft: 0,
-  }),
-}));
-
-const menuItems = [
-  { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-  { text: 'Users', icon: <People />, path: '/users' },
-  { text: 'Inventory', icon: <Inventory2 />, path: '/inventory' },
-  { text: 'Clients', icon: <People />, path: '/clients' },
-  { text: 'Purchases', icon: <ShoppingCart />, path: '/purchases' },
-  { text: 'Sales', icon: <PointOfSale />, path: '/sales' },
-  { text: 'Cash Register', icon: <AttachMoney />, path: '/cash-register' },
-  { text: 'Expenses', icon: <Receipt />, path: '/expenses' },
-  { text: 'Suppliers', icon: <Business />, path: '/suppliers' },
-];
-
-const Layout: React.FC = () => {
-  const [open, setOpen] = useState(true);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const { user, logout } = useAuth();
+export default function Layout() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleDrawerToggle = () => {
-    setOpen(!open);
+    setMobileOpen(!mobileOpen);
   };
 
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const menuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Users', icon: <PeopleIcon />, path: '/users' },
+  ];
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const drawer = (
+    <div>
+      <Toolbar />
+      <List>
+        {menuItems.map((item) => (
+          <ListItem
+            button
+            key={item.text}
+            onClick={() => {
+              navigate(item.path);
+              setMobileOpen(false);
+            }}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        sx={{
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
+        }}
+      >
         <Toolbar>
           <IconButton
             color="inherit"
             aria-label="open drawer"
-            onClick={handleDrawerToggle}
             edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            My-Auto-ERP
+            My Auto ERP
           </Typography>
-          <div>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleMenu}
-              color="inherit"
-            >
-              <AccountCircle />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorEl}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorEl)}
-              onClose={handleClose}
-            >
-              <MenuItem onClick={handleClose}>Profile</MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
-          </div>
+          <Typography variant="body1" sx={{ mr: 2 }}>
+            {user?.username}
+          </Typography>
+          <Button color="inherit" onClick={logout} startIcon={<LogoutIcon />}>
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
-      <Drawer
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+      >
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+      <Box
+        component="main"
         sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          },
+          flexGrow: 1,
+          p: 3,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
         }}
-        variant="persistent"
-        anchor="left"
-        open={open}
       >
         <Toolbar />
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
-                <ListItemButton
-                  selected={location.pathname === item.path}
-                  onClick={() => navigate(item.path)}
-                >
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-      <Main open={open}>
-        <Toolbar />
         <Outlet />
-      </Main>
+      </Box>
     </Box>
   );
-};
-
-export default Layout;
+}
