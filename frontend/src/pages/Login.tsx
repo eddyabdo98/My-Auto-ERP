@@ -15,16 +15,28 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
     try {
       await login(username, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred during login');
+      console.error('Login error:', err);
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.details ||
+        err.message ||
+        'An error occurred during login. Please check the backend server is running and try again.'
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,8 +60,11 @@ export default function Login() {
             width: '100%',
           }}
         >
-          <Typography component="h1" variant="h5">
+          <Typography component="h1" variant="h5" gutterBottom>
             My Auto ERP
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+            Sign in to your account
           </Typography>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             {error && (
@@ -68,6 +83,7 @@ export default function Login() {
               autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
             />
             <TextField
               margin="normal"
@@ -80,15 +96,22 @@ export default function Login() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
+            <Typography variant="body2" color="textSecondary" align="center">
+              Default credentials:<br />
+              Username: admin<br />
+              Password: admin123
+            </Typography>
           </Box>
         </Paper>
       </Box>
