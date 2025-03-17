@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createConnection } from 'typeorm';
+import { AppDataSource } from './config/database';
+import { initializeAdmin } from './config/init-admin';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import itemRoutes from './routes/item.routes';
@@ -35,10 +36,14 @@ app.use('/api/cash', cashRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/suppliers', supplierRoutes);
 
-// Database connection
-createConnection()
-  .then(() => {
+// Initialize database and start server
+AppDataSource.initialize()
+  .then(async () => {
     console.log('Database connected successfully');
+    
+    // Initialize admin user
+    await initializeAdmin();
+    
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
