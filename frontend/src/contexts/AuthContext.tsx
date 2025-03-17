@@ -1,13 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-interface User {
-  username: string;
-  // Add other user properties as needed
-}
 
 interface AuthContextType {
-  user: User | null;
+  isAuthenticated: boolean;
+  token: string | null;
   login: (token: string) => Promise<void>;
   logout: () => void;
 }
@@ -15,55 +10,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const navigate = useNavigate();
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem('token');
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return !!localStorage.getItem('token');
+  });
 
   useEffect(() => {
-    // Check for existing token on mount
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUser(token);
-    }
-  }, []);
+    console.log('AuthContext state updated:', { isAuthenticated, token: !!token });
+  }, [isAuthenticated, token]);
 
-  const fetchUser = async (token: string) => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-      } else {
-        // If token is invalid, clear it
-        localStorage.removeItem('token');
-        setUser(null);
-        navigate('/login');
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      localStorage.removeItem('token');
-      setUser(null);
-      navigate('/login');
-    }
-  };
-
-  const login = async (token: string) => {
-    localStorage.setItem('token', token);
-    await fetchUser(token);
+  const login = async (newToken: string) => {
+    console.log('AuthContext: Setting new token');
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
+    console.log('AuthContext: Logging out');
     localStorage.removeItem('token');
-    setUser(null);
-    navigate('/login');
+    setToken(null);
+    setIsAuthenticated(false);
   };
 
   const value = {
-    user,
+    isAuthenticated,
+    token,
     login,
     logout,
   };
