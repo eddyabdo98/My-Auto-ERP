@@ -13,12 +13,30 @@ import {
   Toolbar,
   Typography,
   Button,
+  Divider,
+  Collapse,
+  ListItemButton,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Logout as LogoutIcon,
+  Inventory as InventoryIcon,
+  ShoppingCart as PurchaseIcon,
+  LocalShipping as SalesIcon,
+  AccountBalance as AccountingIcon,
+  Settings as SettingsIcon,
+  Assignment as ReportsIcon,
+  ExpandLess,
+  ExpandMore,
+  LocalOffer as ProductsIcon,
+  Category as CategoriesIcon,
+  Store as SuppliersIcon,
+  Group as CustomersIcon,
+  Receipt as InvoicesIcon,
+  LocalAtm as PaymentsIcon,
+  Assessment as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -26,6 +44,10 @@ const drawerWidth = 240;
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const [salesOpen, setSalesOpen] = useState(false);
+  const [accountingOpen, setAccountingOpen] = useState(false);
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
@@ -36,24 +58,120 @@ export default function Layout() {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Users', icon: <PeopleIcon />, path: '/users' },
+    {
+      text: 'Inventory',
+      icon: <InventoryIcon />,
+      submenu: [
+        { text: 'Products', icon: <ProductsIcon />, path: '/inventory/products' },
+        { text: 'Categories', icon: <CategoriesIcon />, path: '/inventory/categories' },
+      ],
+    },
+    {
+      text: 'Purchase',
+      icon: <PurchaseIcon />,
+      submenu: [
+        { text: 'Purchase Orders', icon: <ShoppingCart />, path: '/purchase/orders' },
+        { text: 'Suppliers', icon: <SuppliersIcon />, path: '/purchase/suppliers' },
+      ],
+    },
+    {
+      text: 'Sales',
+      icon: <SalesIcon />,
+      submenu: [
+        { text: 'Sales Orders', icon: <LocalShipping />, path: '/sales/orders' },
+        { text: 'Customers', icon: <CustomersIcon />, path: '/sales/customers' },
+      ],
+    },
+    {
+      text: 'Accounting',
+      icon: <AccountingIcon />,
+      submenu: [
+        { text: 'Invoices', icon: <InvoicesIcon />, path: '/accounting/invoices' },
+        { text: 'Payments', icon: <PaymentsIcon />, path: '/accounting/payments' },
+      ],
+    },
+    { text: 'Reports', icon: <ReportsIcon />, path: '/reports' },
+    { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
+    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
+
+  const handleSubmenuClick = (menu: string) => {
+    switch (menu) {
+      case 'Inventory':
+        setInventoryOpen(!inventoryOpen);
+        break;
+      case 'Purchase':
+        setPurchaseOpen(!purchaseOpen);
+        break;
+      case 'Sales':
+        setSalesOpen(!salesOpen);
+        break;
+      case 'Accounting':
+        setAccountingOpen(!accountingOpen);
+        break;
+    }
+  };
+
+  const renderMenuItem = (item: any) => {
+    if (item.submenu) {
+      const isOpen = 
+        (item.text === 'Inventory' && inventoryOpen) ||
+        (item.text === 'Purchase' && purchaseOpen) ||
+        (item.text === 'Sales' && salesOpen) ||
+        (item.text === 'Accounting' && accountingOpen);
+
+      return (
+        <>
+          <ListItemButton onClick={() => handleSubmenuClick(item.text)}>
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+            {isOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+          <Collapse in={isOpen} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {item.submenu.map((subItem: any) => (
+                <ListItemButton
+                  key={subItem.text}
+                  sx={{ pl: 4 }}
+                  onClick={() => {
+                    navigate(subItem.path);
+                    setMobileOpen(false);
+                  }}
+                >
+                  <ListItemIcon>{subItem.icon}</ListItemIcon>
+                  <ListItemText primary={subItem.text} />
+                </ListItemButton>
+              ))}
+            </List>
+          </Collapse>
+        </>
+      );
+    }
+
+    return (
+      <ListItemButton
+        onClick={() => {
+          navigate(item.path);
+          setMobileOpen(false);
+        }}
+      >
+        <ListItemIcon>{item.icon}</ListItemIcon>
+        <ListItemText primary={item.text} />
+      </ListItemButton>
+    );
+  };
 
   const drawer = (
     <div>
       <Toolbar />
       <List>
         {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={() => {
-              navigate(item.path);
-              setMobileOpen(false);
-            }}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
+          <div key={item.text}>
+            {renderMenuItem(item)}
+            {['Dashboard', 'Users', 'Accounting', 'Analytics'].includes(item.text) && (
+              <Divider sx={{ my: 1 }} />
+            )}
+          </div>
         ))}
       </List>
     </div>
