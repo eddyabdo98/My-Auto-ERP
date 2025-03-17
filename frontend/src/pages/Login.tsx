@@ -1,32 +1,30 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Button,
   Container,
-  TextField,
+  Box,
   Typography,
+  TextField,
+  Button,
   Paper,
   Alert,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 
-const Login: React.FC = () => {
+export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
     try {
       await login(username, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid username or password');
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'An error occurred during login');
     }
   };
 
@@ -51,14 +49,14 @@ const Login: React.FC = () => {
           }}
         >
           <Typography component="h1" variant="h5">
-            My-Auto-ERP Login
+            My Auto ERP
           </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-              {error}
-            </Alert>
-          )}
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
             <TextField
               margin="normal"
               required
@@ -96,6 +94,4 @@ const Login: React.FC = () => {
       </Box>
     </Container>
   );
-};
-
-export default Login;
+}
