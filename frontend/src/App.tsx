@@ -1,42 +1,21 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import theme from './theme';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Layout from './components/Layout';
 import UserManagement from './pages/UserManagement';
-import Inventory from './pages/Inventory';
-import Clients from './pages/Clients';
-import Purchases from './pages/Purchases';
-import Sales from './pages/Sales';
-import CashRegister from './pages/CashRegister';
-import Expenses from './pages/Expenses';
-import Suppliers from './pages/Suppliers';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
+  return isAuthenticated ? children : <Navigate to="/login" />;
+}
 
-const App: React.FC = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
@@ -48,21 +27,13 @@ const App: React.FC = () => {
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute>
+                  <PrivateRoute>
                     <Layout />
-                  </ProtectedRoute>
+                  </PrivateRoute>
                 }
               >
-                <Route index element={<Navigate to="/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
+                <Route index element={<Dashboard />} />
                 <Route path="users" element={<UserManagement />} />
-                <Route path="inventory" element={<Inventory />} />
-                <Route path="clients" element={<Clients />} />
-                <Route path="purchases" element={<Purchases />} />
-                <Route path="sales" element={<Sales />} />
-                <Route path="cash-register" element={<CashRegister />} />
-                <Route path="expenses" element={<Expenses />} />
-                <Route path="suppliers" element={<Suppliers />} />
               </Route>
             </Routes>
           </Router>
@@ -70,6 +41,6 @@ const App: React.FC = () => {
       </ThemeProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
