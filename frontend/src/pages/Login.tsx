@@ -16,8 +16,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,16 +25,32 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await login(username, password);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Call the login function from AuthContext
+      await login(data.token);
+      
+      // Clear any existing errors
+      setError('');
+      
+      // Navigate to the dashboard
+      console.log('Login successful, navigating to dashboard...');
       navigate('/');
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(
-        err.response?.data?.message ||
-        err.response?.data?.details ||
-        err.message ||
-        'An error occurred during login. Please check the backend server is running and try again.'
-      );
+      setError(err.message || 'An error occurred during login');
     } finally {
       setIsLoading(false);
     }
@@ -60,11 +76,8 @@ export default function Login() {
             width: '100%',
           }}
         >
-          <Typography component="h1" variant="h5" gutterBottom>
+          <Typography component="h1" variant="h5">
             My Auto ERP
-          </Typography>
-          <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-            Sign in to your account
           </Typography>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
             {error && (
@@ -83,7 +96,6 @@ export default function Login() {
               autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              disabled={isLoading}
             />
             <TextField
               margin="normal"
@@ -96,7 +108,6 @@ export default function Login() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
             />
             <Button
               type="submit"
@@ -105,13 +116,8 @@ export default function Login() {
               sx={{ mt: 3, mb: 2 }}
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
-            <Typography variant="body2" color="textSecondary" align="center">
-              Default credentials:<br />
-              Username: admin<br />
-              Password: admin123
-            </Typography>
           </Box>
         </Paper>
       </Box>
