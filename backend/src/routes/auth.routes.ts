@@ -9,16 +9,29 @@ const userRepository = AppDataSource.getRepository(User);
 
 router.post('/login', async (req, res) => {
   try {
+    console.log('Login attempt:', req.body);
     const { username, password } = req.body;
 
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
     const user = await userRepository.findOne({ where: { username } });
+    console.log('User found:', user ? 'Yes' : 'No');
+    
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     const isValidPassword = await compare(password, user.password);
+    console.log('Password valid:', isValidPassword ? 'Yes' : 'No');
+    
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'Account is inactive' });
     }
 
     const token = sign(
@@ -27,16 +40,31 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
-    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        email: user.email
+      }
+    });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({
+      message: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
 router.post('/change-password', async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
+
+    if (!username || !currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
 
     const user = await userRepository.findOne({ where: { username } });
     if (!user) {
@@ -55,7 +83,10 @@ router.post('/change-password', async (req, res) => {
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({
+      message: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
