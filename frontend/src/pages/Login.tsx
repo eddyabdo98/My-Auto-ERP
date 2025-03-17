@@ -25,6 +25,9 @@ export default function Login() {
     setIsLoading(true);
 
     try {
+      console.log('Attempting login...');
+      console.log('API URL:', import.meta.env.VITE_API_URL);
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -34,20 +37,22 @@ export default function Login() {
       });
 
       const data = await response.json();
+      console.log('Login response:', data);
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Call the login function from AuthContext
+      if (!data.token) {
+        throw new Error('No token received from server');
+      }
+
+      console.log('Login successful, setting token...');
       await login(data.token);
       
-      // Clear any existing errors
-      setError('');
-      
-      // Navigate to the dashboard
-      console.log('Login successful, navigating to dashboard...');
+      console.log('Token set, navigating to dashboard...');
       navigate('/');
+      
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'An error occurred during login');
