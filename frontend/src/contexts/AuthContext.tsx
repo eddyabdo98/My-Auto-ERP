@@ -1,55 +1,74 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+interface User {
+  username: string;
+  // Add other user properties as needed
+}
 
 interface AuthContextType {
-  isAuthenticated: boolean;
-  user: any;
-  login: (username: string, password: string) => Promise<void>;
+  user: User | null;
+  login: (token: string) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Check for existing token on mount
     const token = localStorage.getItem('token');
     if (token) {
-      setIsAuthenticated(true);
-      // TODO: Fetch user data
+      fetchUser(token);
     }
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const fetchUser = async (token: string) => {
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, {
-        username,
-        password,
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
-      setIsAuthenticated(true);
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        // If token is invalid, clear it
+        localStorage.removeItem('token');
+        setUser(null);
+        navigate('/login');
+      }
     } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      console.error('Error fetching user:', error);
+      localStorage.removeItem('token');
+      setUser(null);
+      navigate('/login');
     }
+  };
+
+  const login = async (token: string) => {
+    localStorage.setItem('token', token);
+    await fetchUser(token);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    setIsAuthenticated(false);
+    navigate('/login');
   };
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    login,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
